@@ -88,19 +88,14 @@ const App: React.FC = () => {
     };
 
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-        if (isRoundOver) return;
+        if (isRoundOver || isDrawing) return;
 
         e.currentTarget.setPointerCapture(e.pointerId);
         setIsDrawing(true);
         const point = getPointInCanvas(e);
 
-        // On the first drawing action of a round, we start a new set of paths.
-        // For subsequent actions (e.g., a second stroke), we add to the existing paths.
-        if (hasDrawnInRound) {
-            setPaths(prevPaths => [...prevPaths, [point]]);
-        } else {
-            setPaths([[point]]);
-        }
+        // Always start a new path on pointer down for a new stroke
+        setPaths(prevPaths => [...prevPaths, [point]]);
         setHasDrawnInRound(true);
     };
 
@@ -227,6 +222,19 @@ const App: React.FC = () => {
                 onPointerLeave={handlePointerUp}
             >
                 <canvas ref={userCanvasRef}></canvas>
+                <button
+                    className="btn-clear-canvas"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={handleClearDrawing}
+                    disabled={paths.length === 0 || isRoundOver}
+                    aria-label="Clear drawing"
+                    title="Clear drawing"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </button>
             </div>
             <div className="controls-panel">
                  <h1 className="controls-title">Guess the Stroke</h1>
@@ -255,7 +263,7 @@ const App: React.FC = () => {
                      <button onClick={handleCheckGuess} className="btn btn--primary" disabled={isRoundOver || !hasDrawnInRound || guessesLeft === 0}>
                         Check Guess
                     </button>
-                    <button onClick={handleClearDrawing} className="btn btn--secondary" disabled={paths.length === 0 || isRoundOver}>
+                    <button onClick={handleClearDrawing} className="btn btn--secondary hide-on-mobile" disabled={paths.length === 0 || isRoundOver}>
                         Clear
                     </button>
                     <button onClick={startNewRound} className={`btn ${isRoundOver ? 'btn--primary' : 'btn--secondary'}`} disabled={!isRoundOver}>
@@ -265,9 +273,10 @@ const App: React.FC = () => {
                         onClick={handleExportDrawing} 
                         className="btn btn--secondary" 
                         disabled={!isRoundOver || paths.length === 0}
-                        title={!isRoundOver ? "Finish the round to export your drawing" : "Export your drawing as a JPG"}
+                        title={!isRoundOver ? "Finish the round to save your drawing" : "Save your drawing as a JPG"}
                     >
-                        Export
+                        <span className="show-on-desktop">Export</span>
+                        <span className="show-on-mobile">Save</span>
                     </button>
                 </div>
             </div>
