@@ -219,7 +219,6 @@ const App: React.FC = () => {
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                onPointerLeave={handlePointerUp}
             >
                 <canvas ref={userCanvasRef}></canvas>
                 <button
