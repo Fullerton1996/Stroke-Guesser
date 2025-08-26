@@ -34,6 +34,9 @@ const drawPaths = (
 };
 
 const App: React.FC = () => {
+    const [isIntroVisible, setIsIntroVisible] = useState(true);
+    const [isIntroMounted, setIsIntroMounted] = useState(true);
+
     const [targetStrokeWidth, setTargetStrokeWidth] = useState(0);
     const [guessStrokeWidth, setGuessStrokeWidth] = useState(Math.floor((MIN_STROKE + MAX_STROKE) / 2));
     const [feedback, setFeedback] = useState<{ message: string; type: 'hint' | 'success' | '' }>({ message: '', type: '' });
@@ -62,6 +65,22 @@ const App: React.FC = () => {
 
     }, []);
     
+    // Effect for intro animation
+    useEffect(() => {
+        const animationTimer = setTimeout(() => {
+            setIsIntroVisible(false); // Triggers fade-out
+        }, 2800);
+
+        const unmountTimer = setTimeout(() => {
+            setIsIntroMounted(false); // Removes from DOM after fade-out
+        }, 3300); // 2800ms animation + 500ms fade
+
+        return () => {
+            clearTimeout(animationTimer);
+            clearTimeout(unmountTimer);
+        };
+    }, []);
+
     // Effect for starting a new round on mount
     useEffect(() => {
         startNewRound();
@@ -240,74 +259,96 @@ const App: React.FC = () => {
     }, [paths, targetStrokeWidth]);
 
     return (
-        <div className="app-container">
-            <div
-                className={`canvas-container ${isRoundOver ? 'disabled' : ''}`}
-                aria-label="Fullscreen canvas for drawing"
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-            >
-                <canvas ref={userCanvasRef}></canvas>
-                <button
-                    className="btn-clear-canvas"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={handleClearDrawing}
-                    disabled={paths.length === 0 || isRoundOver}
-                    aria-label="Clear drawing"
-                    title="Clear drawing"
-                >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <>
+            {isIntroMounted && (
+                <div className={`intro-overlay ${!isIntroVisible ? 'hidden' : ''}`} aria-hidden="true">
+                    <svg viewBox="0 0 500 200" className="intro-svg">
+                        <path
+                            className="intro-stroke"
+                            d="M 40,120 C 150,140 350,100 460,120"
+                        />
+                        <text x="50%" y="45%" dy=".3em" textAnchor="middle" className="intro-text">
+                            {'Guess the Stroke'.split('').map((char, index) => (
+                                <tspan
+                                    key={index}
+                                    style={{ animationDelay: `${1.2 + index * 0.05}s` }}
+                                >
+                                    {char === ' ' ? '\u00A0' : char}
+                                </tspan>
+                            ))}
+                        </text>
                     </svg>
-                </button>
-            </div>
-            <div className="controls-panel">
-                 <h1 className="controls-title">Guess the Stroke</h1>
-                 <div className="slider-group">
-                    <label htmlFor="stroke-slider" className="slider-label">Your Guess:</label>
-                    <input
-                        id="stroke-slider"
-                        type="range"
-                        min={MIN_STROKE}
-                        max={MAX_STROKE}
-                        value={guessStrokeWidth}
-                        onChange={(e) => setGuessStrokeWidth(Number(e.target.value))}
-                        disabled={isRoundOver}
-                        aria-label="Stroke width slider"
-                    />
-                    <span className="slider-value">{guessStrokeWidth}px</span>
                 </div>
-                <div className="stats-container">
-                    <div className="stat-item">Guesses Left: {guessesLeft}</div>
-                    <div className="stat-item">Wins: {winCount}</div>
-                </div>
-                <div className={`feedback feedback--${feedback.type}`}>
-                    {feedback.message}
-                </div>
-                <div className="button-group">
-                     <button onClick={handleCheckGuess} className="btn btn--primary" disabled={isRoundOver || !hasDrawnInRound || guessesLeft === 0}>
-                        Check Guess
-                    </button>
-                    <button onClick={handleClearDrawing} className="btn btn--secondary hide-on-mobile" disabled={paths.length === 0 || isRoundOver}>
-                        Clear
-                    </button>
-                    <button onClick={startNewRound} className={`btn ${isRoundOver ? 'btn--primary' : 'btn--secondary'}`} disabled={!isRoundOver}>
-                        Next Round
-                    </button>
-                    <button 
-                        onClick={handleExportDrawing} 
-                        className="btn btn--secondary" 
-                        disabled={!isRoundOver || paths.length === 0}
-                        title={!isRoundOver ? "Finish the round to save your drawing" : "Save your drawing as a JPG"}
+            )}
+            <div className="app-container">
+                <div
+                    className={`canvas-container ${isRoundOver ? 'disabled' : ''}`}
+                    aria-label="Fullscreen canvas for drawing"
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                >
+                    <canvas ref={userCanvasRef}></canvas>
+                    <button
+                        className="btn-clear-canvas"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={handleClearDrawing}
+                        disabled={paths.length === 0 || isRoundOver}
+                        aria-label="Clear drawing"
+                        title="Clear drawing"
                     >
-                        <span className="show-on-desktop">Export</span>
-                        <span className="show-on-mobile">Save</span>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                     </button>
                 </div>
+                <div className="controls-panel">
+                    <h1 className="controls-title">Guess the Stroke</h1>
+                    <div className="slider-group">
+                        <label htmlFor="stroke-slider" className="slider-label">Your Guess:</label>
+                        <input
+                            id="stroke-slider"
+                            type="range"
+                            min={MIN_STROKE}
+                            max={MAX_STROKE}
+                            value={guessStrokeWidth}
+                            onChange={(e) => setGuessStrokeWidth(Number(e.target.value))}
+                            disabled={isRoundOver}
+                            aria-label="Stroke width slider"
+                        />
+                        <span className="slider-value">{guessStrokeWidth}px</span>
+                    </div>
+                    <div className="stats-container">
+                        <div className="stat-item">Guesses Left: {guessesLeft}</div>
+                        <div className="stat-item">Wins: {winCount}</div>
+                    </div>
+                    <div className={`feedback feedback--${feedback.type}`}>
+                        {feedback.message}
+                    </div>
+                    <div className="button-group">
+                        <button onClick={handleCheckGuess} className="btn btn--primary" disabled={isRoundOver || !hasDrawnInRound || guessesLeft === 0}>
+                            Check Guess
+                        </button>
+                        <button onClick={handleClearDrawing} className="btn btn--secondary hide-on-mobile" disabled={paths.length === 0 || isRoundOver}>
+                            Clear
+                        </button>
+                        <button onClick={startNewRound} className={`btn ${isRoundOver ? 'btn--primary' : 'btn--secondary'}`} disabled={!isRoundOver}>
+                            Next Round
+                        </button>
+                        <button 
+                            onClick={handleExportDrawing} 
+                            className="btn btn--secondary" 
+                            disabled={!isRoundOver || paths.length === 0}
+                            title={!isRoundOver ? "Finish the round to save your drawing" : "Save your drawing as a JPG"}
+                        >
+                            <span className="show-on-desktop">Export</span>
+                            <span className="show-on-mobile">Save</span>
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
