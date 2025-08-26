@@ -178,16 +178,44 @@ const App: React.FC = () => {
         ctx.textBaseline = 'middle';
         ctx.fillText('I guessed the stroke!', exportCanvas.width / 2, exportCanvas.height - bannerHeight / 2);
 
+        // 5. Trigger share or download
+        exportCanvas.toBlob(async (blob) => {
+            if (!blob) {
+                console.error('Failed to create blob from canvas');
+                return;
+            }
 
-        // 5. Trigger download
-        const dataUrl = exportCanvas.toDataURL('image/jpeg', 0.9);
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = 'i-guessed-the-stroke.jpg';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            const fileName = 'i-guessed-the-stroke.jpg';
+            const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+            // Use Web Share API if available (great for mobile)
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'I guessed the stroke!',
+                        text: 'Check out my drawing from the Guess the Stroke game!',
+                    });
+                } catch (error) {
+                    // Fail silently if the user cancels the share dialog
+                    if ((error as Error).name !== 'AbortError') {
+                        console.error('Share API error:', error);
+                    }
+                }
+            } else {
+                // Fallback to traditional download (for desktop)
+                const dataUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(dataUrl);
+            }
+        }, 'image/jpeg', 0.9);
     };
+
 
     // Resize observer to keep canvas drawing sharp
     useEffect(() => {
