@@ -89,15 +89,19 @@ const App: React.FC = () => {
 
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (isRoundOver) return;
-        // Start a new drawing, clearing the old one from this round
-        if (!hasDrawnInRound) {
-            setPaths([]);
-        }
+
         e.currentTarget.setPointerCapture(e.pointerId);
         setIsDrawing(true);
-        setHasDrawnInRound(true);
         const point = getPointInCanvas(e);
-        setPaths(prevPaths => [...prevPaths, [point]]);
+
+        // On the first drawing action of a round, we start a new set of paths.
+        // For subsequent actions (e.g., a second stroke), we add to the existing paths.
+        if (hasDrawnInRound) {
+            setPaths(prevPaths => [...prevPaths, [point]]);
+        } else {
+            setPaths([[point]]);
+        }
+        setHasDrawnInRound(true);
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -251,21 +255,21 @@ const App: React.FC = () => {
                      <button onClick={handleCheckGuess} className="btn btn--primary" disabled={isRoundOver || !hasDrawnInRound || guessesLeft === 0}>
                         Check Guess
                     </button>
+                    <button onClick={handleClearDrawing} className="btn btn--secondary" disabled={paths.length === 0 || isRoundOver}>
+                        Clear
+                    </button>
                     <button onClick={startNewRound} className={`btn ${isRoundOver ? 'btn--primary' : 'btn--secondary'}`} disabled={!isRoundOver}>
                         Next Round
                     </button>
+                    <button 
+                        onClick={handleExportDrawing} 
+                        className="btn btn--secondary" 
+                        disabled={!isRoundOver || paths.length === 0}
+                        title={!isRoundOver ? "Finish the round to export your drawing" : "Export your drawing as a JPG"}
+                    >
+                        Export
+                    </button>
                 </div>
-                <button onClick={handleClearDrawing} className="btn btn--tertiary" disabled={paths.length === 0 || isRoundOver}>
-                    Clear Drawing
-                </button>
-                <button 
-                    onClick={handleExportDrawing} 
-                    className="btn btn--primary" 
-                    disabled={!isRoundOver || paths.length === 0}
-                    title={!isRoundOver ? "Finish the round to export your drawing" : "Export your drawing as a JPG"}
-                >
-                    Export Drawing
-                </button>
             </div>
         </div>
     );
