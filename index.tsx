@@ -7,6 +7,21 @@ const MIN_STROKE = 2;
 const MAX_STROKE = 50;
 const MAX_GUESSES = 3;
 
+// A collection of 10 different smiley face mouth paths for the intro animation
+const SMILEY_PATHS = [
+    'M 150,120 Q 250,190 350,120', // Smile
+    'M 150,150 Q 250,80 350,150',  // Frown
+    'M 150,140 L 350,140',         // Neutral
+    'M 150,120 Q 250,220 350,120', // Big Smile
+    'M 200,120 C 200,180 300,180 300,120', // Open "O"
+    'M 150,140 C 200,100 300,180 350,140', // Wiggle
+    'M 150,120 Q 280,190 350,100', // Lopsided
+    'M 180,150 C 200,180 300,180 320,150', // Small Smile
+    'M 150,120 C 200,180 300,100 350,150', // S-Curve
+    'M 200,120 L 300,120 C 300,160 200,160 200,120 Z', // "D" Mouth
+];
+
+
 // Helper to draw multiple paths on a canvas context
 const drawPaths = (
     ctx: CanvasRenderingContext2D,
@@ -36,6 +51,7 @@ const drawPaths = (
 const App: React.FC = () => {
     const [isIntroVisible, setIsIntroVisible] = useState(true);
     const [isIntroMounted, setIsIntroMounted] = useState(true);
+    const [currentFaceIndex, setCurrentFaceIndex] = useState(0);
 
     const [targetStrokeWidth, setTargetStrokeWidth] = useState(0);
     const [guessStrokeWidth, setGuessStrokeWidth] = useState(Math.floor((MIN_STROKE + MAX_STROKE) / 2));
@@ -67,8 +83,13 @@ const App: React.FC = () => {
     
     // Effect for intro animation
     useEffect(() => {
+        const faceInterval = setInterval(() => {
+            setCurrentFaceIndex(prev => (prev + 1) % SMILEY_PATHS.length);
+        }, 280); // ~2.8s total animation time for 10 faces
+
         const animationTimer = setTimeout(() => {
             setIsIntroVisible(false); // Triggers fade-out
+            clearInterval(faceInterval); // Stop cycling when animation is over
         }, 2800);
 
         const unmountTimer = setTimeout(() => {
@@ -78,6 +99,7 @@ const App: React.FC = () => {
         return () => {
             clearTimeout(animationTimer);
             clearTimeout(unmountTimer);
+            clearInterval(faceInterval);
         };
     }, []);
 
@@ -262,12 +284,16 @@ const App: React.FC = () => {
         <>
             {isIntroMounted && (
                 <div className={`intro-overlay ${!isIntroVisible ? 'hidden' : ''}`} aria-hidden="true">
-                    <svg viewBox="0 0 500 200" className="intro-svg">
-                        <circle cx="210" cy="80" r="12" className="intro-eye" style={{ animationDelay: '0.8s' }} />
-                        <circle cx="290" cy="80" r="12" className="intro-eye" style={{ animationDelay: '0.9s' }} />
+                    <svg
+                        viewBox="0 0 500 200"
+                        className="intro-svg"
+                    >
+                        <circle cx="210" cy="80" r="12" className="intro-eye" style={{ animationDelay: '0s' }} />
+                        <circle cx="290" cy="80" r="12" className="intro-eye" style={{ animationDelay: '0.1s' }} />
                         <path
+                            key={currentFaceIndex}
                             className="intro-stroke"
-                            d="M 150,120 Q 250,190 350,120"
+                            d={SMILEY_PATHS[currentFaceIndex]}
                         />
                     </svg>
                 </div>
