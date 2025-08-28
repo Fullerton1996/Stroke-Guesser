@@ -263,20 +263,12 @@ const App: React.FC = () => {
             {isIntroMounted && (
                 <div className={`intro-overlay ${!isIntroVisible ? 'hidden' : ''}`} aria-hidden="true">
                     <svg viewBox="0 0 500 200" className="intro-svg">
+                        <circle cx="210" cy="80" r="12" className="intro-eye" style={{ animationDelay: '0.8s' }} />
+                        <circle cx="290" cy="80" r="12" className="intro-eye" style={{ animationDelay: '0.9s' }} />
                         <path
                             className="intro-stroke"
-                            d="M 40,120 C 150,140 350,100 460,120"
+                            d="M 150,120 Q 250,190 350,120"
                         />
-                        <text x="50%" y="45%" dy=".3em" textAnchor="middle" className="intro-text">
-                            {'Guess the Stroke'.split('').map((char, index) => (
-                                <tspan
-                                    key={index}
-                                    style={{ animationDelay: `${1.2 + index * 0.05}s` }}
-                                >
-                                    {char === ' ' ? '\u00A0' : char}
-                                </tspan>
-                            ))}
-                        </text>
                     </svg>
                 </div>
             )}
